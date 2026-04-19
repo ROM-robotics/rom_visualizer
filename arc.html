@@ -6,7 +6,16 @@
 <title>ROM ROBOTICS — Rotation Kinematics</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; display: flex; height: 100vh; overflow: hidden; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+#page-wrap { display: flex; flex: 1; overflow: hidden; }
+#right-nav { width: 180px; background: #12192e; display: flex; flex-direction: column; gap: 10px; padding: 20px 14px; border-left: 1px solid #1e3a5f; }
+#right-nav h3 { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+.nav-btn { display: block; background: #0f3460; color: #4ecca3; text-decoration: none; border-radius: 6px; padding: 10px 12px; font-size: 0.82rem; font-weight: bold; border: 1px solid #1e3a5f; transition: background 0.15s; line-height: 1.4; }
+.nav-btn:hover { background: #1a4a8a; }
+.nav-btn.active { background: #1d4e8f; border-color: #4ecca3; color: #fff; cursor: default; }
+.nav-btn .nav-sub { display: block; font-size: 0.7rem; color: #aaa; font-weight: normal; margin-top: 2px; }
+#site-footer { background: #0d1117; text-align: center; padding: 8px; font-size: 0.72rem; color: #444; letter-spacing: 0.06em; border-top: 1px solid #1e3a5f; flex-shrink: 0; }
+#site-footer span { color: #e94560; font-weight: bold; }
 
 /* ---- Left panel ---- */
 #panel {
@@ -152,7 +161,7 @@ canvas#arc-gl {
 </style>
 </head>
 <body>
-
+<div id="page-wrap">
 <div id="panel">
   <div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
@@ -160,7 +169,6 @@ canvas#arc-gl {
       <div style="width:1px;height:32px;background:#1e3a5f;"></div>
       <h1 style="margin:0;">Rotation Kinematics</h1>
     </div>
-    <a class="back-link" href="index.html">← Quaternion Visualizer</a>
   </div>
 
   <!-- Equations reference box -->
@@ -240,6 +248,15 @@ canvas#arc-gl {
 <div id="viz">
   <canvas id="arc-gl"></canvas>
 </div>
+
+<div id="right-nav">
+  <h3>Pages</h3>
+  <a class="nav-btn" href="index.html">Quaternion<br>Visualizer<span class="nav-sub">Roll / Pitch / Yaw</span></a>
+  <a class="nav-btn active" href="arc.html">Rotation<br>Kinematics<span class="nav-sub">S=rθ, v=rω, aₙ, aₜ</span></a>
+</div>
+</div>
+
+<footer id="site-footer"><span>ROM Dynamics Co,.Ltd</span></footer>
 
 <script>
 const canvas = document.getElementById('arc-gl');
