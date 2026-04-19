@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROM ROBOTICS — Rotation Kinematics</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; display: flex; height: 100vh; overflow: hidden; }
+
+/* ---- Left panel ---- */
+#panel {
+  width: 340px;
+  min-width: 280px;
+  padding: 22px 20px;
+  background: #16213e;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+h1 { font-size: 1.25rem; color: #e94560; }
+
+a.back-link {
+  font-size: 0.8rem;
+  color: #4ecca3;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: -8px;
+}
+a.back-link:hover { text-decoration: underline; }
+
+/* Equation box */
+.eq-box {
+  background: #0f3460;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.eq-box h2 {
+  font-size: 0.85rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.eq-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+}
+.eq-lhs { color: #4ecca3; font-weight: bold; white-space: nowrap; }
+.eq-rhs { color: #aaa; }
+.eq-rhs em { color: #e94560; font-style: normal; font-weight: bold; }
+
+/* Sliders */
+.section-title {
+  font-size: 0.8rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.slider-group { display: flex; flex-direction: column; gap: 12px; }
+.slider-row { display: flex; flex-direction: column; gap: 4px; }
+.slider-row label {
+  font-size: 0.83rem;
+  color: #aaa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.slider-row label .badge {
+  background: #e94560;
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  font-family: monospace;
+  min-width: 70px;
+  text-align: center;
+}
+.slider-row label .badge.teal { background: #1e7a6d; color: #4ecca3; }
+.slider-row input[type=range] { width: 100%; accent-color: #e94560; }
+
+/* Results display */
+.results {
+  background: #0a1628;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.result-card {
+  background: #0f3460;
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.result-card .rc-label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+.result-card .rc-formula { font-family: 'Georgia', serif; font-size: 0.8rem; color: #aaa; }
+.result-card .rc-val {
+  font-family: monospace;
+  font-size: 1.05rem;
+  font-weight: bold;
+}
+.rc-s  { color: #e94560; }
+.rc-v  { color: #f7b731; }
+.rc-an { color: #4ecca3; }
+.rc-at { color: #a29bfe; }
+
+/* Animate button */
+#anim-btn {
+  background: #e94560;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  width: 100%;
+  transition: background 0.2s;
+}
+#anim-btn:hover { background: #c73650; }
+#anim-btn.running { background: #1e7a6d; }
+#anim-btn.running:hover { background: #155f56; }
+
+.legend {
+  font-size: 0.75rem;
+  color: #555;
+  line-height: 1.7;
+}
+.legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+/* ---- Right canvas area ---- */
+#viz {
+  flex: 1;
+  position: relative;
+  background: #0a0a1a;
+}
+canvas#arc-gl {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <div style="font-size:1rem;font-weight:900;letter-spacing:0.08em;color:#e94560;line-height:1;">ROM<br><span style="color:#4ecca3;font-size:0.65rem;letter-spacing:0.18em;">ROBOTICS</span></div>
+      <div style="width:1px;height:32px;background:#1e3a5f;"></div>
+      <h1 style="margin:0;">Rotation Kinematics</h1>
+    </div>
+    <a class="back-link" href="index.html">← Quaternion Visualizer</a>
+  </div>
+
+  <!-- Equations reference box -->
+  <div class="eq-box">
+    <h2>Equations</h2>
+    <div class="eq-grid">
+      <div class="eq-lhs">S = rθ</div>
+      <div class="eq-rhs">Arc length &nbsp;(<em>m</em>)</div>
+
+      <div class="eq-lhs">v = rω</div>
+      <div class="eq-rhs">Tangential velocity &nbsp;(<em>m/s</em>)</div>
+
+      <div class="eq-lhs">aₙ = v²/r = rω²</div>
+      <div class="eq-rhs">Centripetal accel &nbsp;(<em>m/s²</em>)</div>
+
+      <div class="eq-lhs">aₜ = rα</div>
+      <div class="eq-rhs">Tangential accel &nbsp;(<em>m/s²</em>)</div>
+    </div>
+  </div>
+
+  <!-- Sliders -->
+  <div class="slider-group">
+    <div class="slider-row">
+      <label>Radius r &nbsp;<span class="badge" id="lbl-r">1.00 m</span></label>
+      <input type="range" id="sl-r" min="0.5" max="3" value="1.5" step="0.05">
+    </div>
+    <div class="slider-row">
+      <label>Angle θ &nbsp;<span class="badge" id="lbl-theta">90°</span></label>
+      <input type="range" id="sl-theta" min="0" max="360" value="90" step="1">
+    </div>
+    <div class="slider-row">
+      <label>Angular velocity ω &nbsp;<span class="badge" id="lbl-omega">1.00 rad/s</span></label>
+      <input type="range" id="sl-omega" min="0" max="6" value="1" step="0.1">
+    </div>
+    <div class="slider-row">
+      <label>Angular accel α &nbsp;<span class="badge" id="lbl-alpha">0.50 rad/s²</span></label>
+      <input type="range" id="sl-alpha" min="0" max="5" value="0.5" step="0.1">
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results">
+    <div class="result-card">
+      <div class="rc-label">Arc Length</div>
+      <div class="rc-formula">S = r·θ</div>
+      <div class="rc-val rc-s" id="res-s">—</div>
+    </div>
+    <div class="result-card">
+      <div class="rc-label">Tang. Velocity</div>
+      <div class="rc-formula">v = r·ω</div>
+      <div class="rc-val rc-v" id="res-v">—</div>
+    </div>
+    <div class="result-card">
+      <div class="rc-label">Centripetal aₙ</div>
+      <div class="rc-formula">aₙ = r·ω²</div>
+      <div class="rc-val rc-an" id="res-an">—</div>
+    </div>
+    <div class="result-card">
+      <div class="rc-label">Tangential aₜ</div>
+      <div class="rc-formula">aₜ = r·α</div>
+      <div class="rc-val rc-at" id="res-at">—</div>
+    </div>
+  </div>
+
+  <!-- Animate -->
+  <button id="anim-btn">▶ Animate (ω တွက်ချက်)</button>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span style="background:#e94560"></span> S — arc length<br>
+    <span style="background:#f7b731"></span> v — tangential velocity<br>
+    <span style="background:#4ecca3"></span> aₙ — centripetal acceleration<br>
+    <span style="background:#a29bfe"></span> aₜ — tangential acceleration
+  </div>
+</div>
+
+<div id="viz">
+  <canvas id="arc-gl"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('arc-gl');
+const ctx = canvas.getContext('2d');
+
+const slR     = document.getElementById('sl-r');
+const slTheta = document.getElementById('sl-theta');
+const slOmega = document.getElementById('sl-omega');
+const slAlpha = document.getElementById('sl-alpha');
+const animBtn = document.getElementById('anim-btn');
+
+let animRunning = false;
+let animTheta = 90; // degrees
+let lastTime = null;
+
+function resize() {
+  canvas.width  = canvas.clientWidth  * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
+}
+window.addEventListener('resize', () => { resize(); draw(); });
+resize();
+
+function getValues() {
+  return {
+    r:     parseFloat(slR.value),
+    theta: parseFloat(slTheta.value) * Math.PI / 180,
+    thetaDeg: parseFloat(slTheta.value),
+    omega: parseFloat(slOmega.value),
+    alpha: parseFloat(slAlpha.value),
+  };
+}
+
+function updateLabels(v) {
+  document.getElementById('lbl-r').textContent     = v.r.toFixed(2) + ' m';
+  document.getElementById('lbl-theta').textContent = v.thetaDeg.toFixed(0) + '°';
+  document.getElementById('lbl-omega').textContent = v.omega.toFixed(2) + ' rad/s';
+  document.getElementById('lbl-alpha').textContent = v.alpha.toFixed(2) + ' rad/s²';
+
+  const s  = v.r * v.theta;
+  const vt = v.r * v.omega;
+  const an = v.r * v.omega * v.omega;
+  const at = v.r * v.alpha;
+
+  document.getElementById('res-s').textContent  = s.toFixed(3)  + ' m';
+  document.getElementById('res-v').textContent  = vt.toFixed(3) + ' m/s';
+  document.getElementById('res-an').textContent = an.toFixed(3) + ' m/s²';
+  document.getElementById('res-at').textContent = at.toFixed(3) + ' m/s²';
+}
+
+function drawArrow(ctx, fromX, fromY, toX, toY, color, dpr, label) {
+  const dx = toX - fromX, dy = toY - fromY;
+  const len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 2) return;
+  const ux = dx/len, uy = dy/len;
+  const headLen = 12 * dpr;
+  const angle = Math.PI / 6;
+
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5 * dpr;
+  ctx.stroke();
+
+  // arrowhead
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(toX - headLen*(ux*Math.cos(angle) - uy*Math.sin(angle)),
+             toY - headLen*(uy*Math.cos(angle) + ux*Math.sin(angle)));
+  ctx.lineTo(toX - headLen*(ux*Math.cos(angle) + uy*Math.sin(angle)),
+             toY - headLen*(uy*Math.cos(angle) - ux*Math.sin(angle)));
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  if (label) {
+    ctx.font = `bold ${11 * dpr}px monospace`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    const lx = toX + ux * 16 * dpr;
+    const ly = toY + uy * 16 * dpr;
+    ctx.fillText(label, lx, ly + 4*dpr);
+  }
+}
+
+function draw() {
+  const v = getValues();
+  updateLabels(v);
+
+  const W = canvas.width, H = canvas.height;
+  const dpr = devicePixelRatio;
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid dots
+  ctx.fillStyle = '#111827';
+  for (let x = 0; x < W; x += 30*dpr) {
+    for (let y = 0; y < H; y += 30*dpr) {
+      ctx.beginPath();
+      ctx.arc(x, y, dpr, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  const cx = W / 2, cy = H / 2;
+  // Scale: use 30% of min dimension per unit radius
+  const scale = Math.min(W, H) * 0.28 / 1.5;
+  const dispR = v.r * scale;
+
+  // ---- Full circle (faint) ----
+  ctx.beginPath();
+  ctx.arc(cx, cy, dispR, 0, Math.PI*2);
+  ctx.strokeStyle = '#1e3254';
+  ctx.lineWidth = 1.5 * dpr;
+  ctx.stroke();
+
+  // ---- Arc (s = rθ), starts at 0° going CCW ----
+  // We draw from 0 to -theta (CCW in canvas = negative angle)
+  ctx.beginPath();
+  ctx.arc(cx, cy, dispR, 0, -v.theta, true);
+  ctx.strokeStyle = '#e94560';
+  ctx.lineWidth = 5 * dpr;
+  ctx.stroke();
+
+  // Arc label mid-point
+  const arcMid = -v.theta / 2;
+  const arcLx = cx + (dispR + 20*dpr) * Math.cos(arcMid);
+  const arcLy = cy + (dispR + 20*dpr) * Math.sin(arcMid);
+  ctx.font = `bold ${12*dpr}px monospace`;
+  ctx.fillStyle = '#e94560';
+  ctx.textAlign = 'center';
+  ctx.fillText(`S=${( v.r * v.theta).toFixed(2)}m`, arcLx, arcLy);
+
+  // ---- Angle indicator arc ----
+  const angleR = dispR * 0.22;
+  ctx.beginPath();
+  ctx.arc(cx, cy, angleR, 0, -v.theta, true);
+  ctx.strokeStyle = '#4ecca380';
+  ctx.lineWidth = 2 * dpr;
+  ctx.stroke();
+  const thetaMid = -v.theta / 2;
+  ctx.font = `${10*dpr}px monospace`;
+  ctx.fillStyle = '#4ecca3';
+  ctx.textAlign = 'center';
+  ctx.fillText('θ', cx + (angleR + 10*dpr)*Math.cos(thetaMid), cy + (angleR + 10*dpr)*Math.sin(thetaMid));
+
+  // ---- Radius line to start (0°) ----
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + dispR, cy);
+  ctx.strokeStyle = '#33415580';
+  ctx.lineWidth = 1.5 * dpr;
+  ctx.setLineDash([5*dpr, 4*dpr]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ---- Radius line to point P ----
+  const px = cx + dispR * Math.cos(-v.theta);
+  const py = cy + dispR * Math.sin(-v.theta);
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(px, py);
+  ctx.strokeStyle = '#aaa';
+  ctx.lineWidth = 1.5 * dpr;
+  ctx.stroke();
+  // r label
+  ctx.font = `${10*dpr}px monospace`;
+  ctx.fillStyle = '#aaa';
+  ctx.textAlign = 'center';
+  ctx.fillText('r', (cx + px)/2 + 6*dpr, (cy + py)/2 - 6*dpr);
+
+  // ---- Point P ----
+  ctx.beginPath();
+  ctx.arc(px, py, 7*dpr, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px, py, 4*dpr, 0, Math.PI*2);
+  ctx.fillStyle = '#e94560';
+  ctx.fill();
+  ctx.font = `bold ${10*dpr}px monospace`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.fillText('P', px + 8*dpr, py - 8*dpr);
+
+  // ---- Tangent direction at P ----
+  // Tangent to circle at angle -theta is perpendicular to radius: (-sin(-theta), -cos(-theta))
+  // = (sin(theta), -cos(theta)) pointing CCW
+  const tx =  Math.sin(v.theta); // tangent unit vector x (CCW)
+  const ty = -Math.cos(v.theta); // tangent unit vector y (CCW) — canvas Y inverted so flip
+  // Actually for canvas: point at (cos(-θ), sin(-θ)), tangent CCW = (-sin(-θ), cos(-θ)) = (sinθ, cosθ)
+  const tanX =  Math.sin(v.theta);
+  const tanY =  Math.cos(v.theta); // in canvas coords
+
+  // ---- v = rω (tangential velocity) ----
+  const vMag = v.r * v.omega;
+  const vScale = Math.min(vMag * scale * 0.4, dispR * 0.8);
+  if (vMag > 0.001) {
+    drawArrow(ctx, px, py, px + tanX * vScale, py - tanY * vScale, '#f7b731', dpr, `v=${vMag.toFixed(2)}`);
+  }
+
+  // ---- aₙ = rω² (centripetal, toward center) ----
+  const anMag = v.r * v.omega * v.omega;
+  const anScale = Math.min(anMag * scale * 0.25, dispR * 0.7);
+  const toCx = cx - px, toCy = cy - py;
+  const toCLen = Math.sqrt(toCx*toCx + toCy*toCy);
+  if (anMag > 0.001 && toCLen > 0) {
+    const ncx = toCx / toCLen, ncy = toCy / toCLen;
+    drawArrow(ctx, px, py, px + ncx * anScale, py + ncy * anScale, '#4ecca3', dpr, `aₙ=${anMag.toFixed(2)}`);
+  }
+
+  // ---- aₜ = rα (tangential acceleration) ----
+  const atMag = v.r * v.alpha;
+  const atScale = Math.min(atMag * scale * 0.3, dispR * 0.7);
+  if (atMag > 0.001) {
+    // draw slightly offset so it doesn't overlap v
+    const offX = px - tanY * 8*dpr;
+    const offY = py - tanX * 8*dpr;
+    drawArrow(ctx, offX, offY, offX + tanX * atScale, offY - tanY * atScale, '#a29bfe', dpr, `aₜ=${atMag.toFixed(2)}`);
+  }
+
+  // ---- Center dot ----
+  ctx.beginPath();
+  ctx.arc(cx, cy, 5*dpr, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.font = `${9*dpr}px monospace`;
+  ctx.fillStyle = '#555';
+  ctx.textAlign = 'center';
+  ctx.fillText('O', cx, cy + 14*dpr);
+
+  // ---- Axes labels ----
+  ctx.font = `${10*dpr}px monospace`;
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  ctx.fillText('0° →', cx + dispR + 20*dpr, cy + 4*dpr);
+}
+
+// Slider events
+[slR, slTheta, slOmega, slAlpha].forEach(el => {
+  el.addEventListener('input', () => {
+    if (!animRunning) draw();
+    else updateLabels(getValues());
+  });
+});
+
+// ---- Animation ----
+animBtn.addEventListener('click', () => {
+  animRunning = !animRunning;
+  if (animRunning) {
+    animTheta = parseFloat(slTheta.value);
+    lastTime = null;
+    animBtn.textContent = '⏹ Stop';
+    animBtn.classList.add('running');
+    requestAnimationFrame(animLoop);
+  } else {
+    animBtn.textContent = '▶ Animate (ω တွက်ချက်)';
+    animBtn.classList.remove('running');
+  }
+});
+
+function animLoop(ts) {
+  if (!animRunning) return;
+  if (!lastTime) lastTime = ts;
+  const dt = (ts - lastTime) / 1000;
+  lastTime = ts;
+
+  const omega = parseFloat(slOmega.value);
+  animTheta += omega * dt * 180 / Math.PI;
+  animTheta = ((animTheta % 360) + 360) % 360;
+  slTheta.value = animTheta;
+  draw();
+  requestAnimationFrame(animLoop);
+}
+
+draw();
+</script>
+</body>
+</html>

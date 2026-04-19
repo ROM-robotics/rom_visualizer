@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROM ROBOTICS — Quaternion Visualizer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; display: flex; height: 100vh; }
+#controls { width: 320px; padding: 24px; background: #16213e; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+h1 { font-size: 1.3rem; color: #e94560; }
+.input-group { display: flex; flex-direction: column; gap: 6px; }
+.input-group label { font-size: 0.85rem; color: #aaa; }
+.input-group input[type=range] { width: 100%; accent-color: #e94560; }
+.input-group .val { font-size: 0.9rem; color: #0f3460; background: #e94560; padding: 2px 8px; border-radius: 4px; display: inline-block; min-width: 60px; text-align: center; font-weight: bold; }
+#quat-display { background: #0f3460; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 0.95rem; line-height: 1.8; }
+#quat-display span { color: #e94560; font-weight: bold; }
+#demo-section { background: #0f3460; padding: 16px; border-radius: 8px; }
+#demo-section h2 { font-size: 1rem; color: #e94560; margin-bottom: 10px; }
+#demo-btn { background: #e94560; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; width: 100%; }
+#demo-btn:hover { background: #c73650; }
+#demo-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#demo-info { font-size: 0.8rem; margin-top: 10px; line-height: 1.6; color: #aaa; min-height: 40px; }
+#demo-info .highlight { color: #e94560; font-weight: bold; }
+#demo-info .green { color: #4ecca3; font-weight: bold; }
+#circle-canvas { width: 100%; height: 200px; display: block; background: #0a0a1a; border-radius: 8px; margin-top: 10px; }
+#canvas-container { flex: 1; position: relative; }
+canvas#gl { width: 100%; height: 100%; display: block; }
+.info { font-size: 0.75rem; color: #555; margin-top: auto; }
+</style>
+</head>
+<body>
+<div id="controls">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:-6px;">
+    <div style="font-size:1rem;font-weight:900;letter-spacing:0.08em;color:#e94560;line-height:1;">ROM<br><span style="color:#4ecca3;font-size:0.65rem;letter-spacing:0.18em;">ROBOTICS</span></div>
+    <div style="width:1px;height:32px;background:#1e3a5f;"></div>
+    <h1 style="margin:0;">Quaternion Visualizer</h1>
+  </div>
+
+  <div class="input-group">
+    <label>Roll (X) — <span class="val" id="roll-val">0°</span></label>
+    <input type="range" id="roll" min="-180" max="180" value="0" step="1">
+  </div>
+  <div class="input-group">
+    <label>Pitch (Y) — <span class="val" id="pitch-val">0°</span></label>
+    <input type="range" id="pitch" min="-180" max="180" value="0" step="1">
+  </div>
+  <div class="input-group">
+    <label>Yaw (Z) — <span class="val" id="yaw-val">0°</span></label>
+    <input type="range" id="yaw" min="-180" max="180" value="0" step="1">
+  </div>
+
+  <div id="quat-display">
+    Quaternion:<br>
+    w = <span id="qw">1.0000</span><br>
+    x = <span id="qx">0.0000</span><br>
+    y = <span id="qy">0.0000</span><br>
+    z = <span id="qz">0.0000</span><br><br>
+    Axis: <span id="axis">(0, 0, 1)</span><br>
+    Angle: <span id="angle">0°</span>
+  </div>
+
+  <p class="info">Roll/Pitch/Yaw → Quaternion conversion<br>3D object rotates in real-time</p>
+
+  <a href="arc.html" style="display:block;background:#0f3460;padding:12px 16px;border-radius:8px;color:#4ecca3;text-decoration:none;font-size:0.9rem;font-weight:bold;">→ Rotation Kinematics Visualizer<br><span style="color:#aaa;font-size:0.78rem;font-weight:normal;">S=rθ, v=rω, aₙ=rω², aₜ=rα</span></a>
+
+  <div id="demo-section">
+    <h2>720° Double Cover Demo</h2>
+    <button id="demo-btn">▶ Start 720° Rotation</button>
+    <div id="demo-info">Yaw ကို 0° → 720° animate လုပ်ပြီး quaternion path ကိုကြည့်ပါ</div>
+    <canvas id="circle-canvas"></canvas>
+  </div>
+</div>
+
+<div id="canvas-container">
+  <canvas id="gl"></canvas>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
